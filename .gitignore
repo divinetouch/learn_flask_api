@@ -1,6 +1,5 @@
 venv/
 .env
-.flaskenv
 __pycache__/
 .history/
 .idea
