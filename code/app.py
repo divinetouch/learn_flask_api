@@ -4,7 +4,7 @@ from flask import Flask
 from flask_restful import Api
 from dotenv import load_dotenv
 from security import authenticate, identity
-from resources.user import UserRegister, User, UserLogin
+from resources.user import UserRegister, User, UserLogin, TokenRefresh
 from resources.item import Item, ItemList
 from resources.store import Store, StoreList
 from db import db
@@ -45,5 +45,6 @@ api.add_resource(UserRegister, '/register')
 api.add_resource(StoreList, '/stores')
 api.add_resource(User, '/user/<int:user_id>')
 api.add_resource(UserLogin, '/login')
+api.add_resource(TokenRefresh, '/refresh')
 
 app.run(port=5000)
