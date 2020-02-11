@@ -1,6 +1,6 @@
 import os
 from flask_jwt_extended import JWTManager
-from flask import Flask
+from flask import Flask, jsonify
 from flask_restful import Api
 from dotenv import load_dotenv
 from security import authenticate, identity
@@ -37,6 +37,21 @@ def add_claims_to_jwt(identity):
     if identity == 1:
         return {'is_admin': True}
     return {'is_admin': False}
+
+# after the token has expired, this method will be triggered
+@jwt.expired_token_loader
+def expired_token_callback():
+    return {
+        'description': 'The token has expired.',
+        'error': 'token_expired'
+    }, 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(error):
+    return jsonify({
+        'description': 'Signature verification failed',
+        'error': 'invalid_token'
+    }), 401
 
 api.add_resource(Item, '/item/<string:name>')
 api.add_resource(Store, '/store/<string:name>')
