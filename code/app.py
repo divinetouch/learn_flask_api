@@ -35,4 +35,4 @@ api.add_resource(ItemList, '/items')
 api.add_resource(UserRegister, '/register')
 api.add_resource(StoreList, '/stores')
 
-app.run(host="192.168.1.39", port=5000)
+app.run(port=5000)
