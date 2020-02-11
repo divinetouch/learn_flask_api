@@ -4,9 +4,12 @@ from flask_jwt_extended import (
         create_access_token, 
         create_refresh_token, 
         jwt_refresh_token_required, 
-        get_jwt_identity
+        get_jwt_identity,
+        get_raw_jwt,
+        jwt_required
         )
 from werkzeug.security import safe_str_cmp
+from resources.blacklist import BLACKLIST
 
 _user_parser = reqparse.RequestParser()
 _user_parser.add_argument('username',
@@ -80,12 +83,22 @@ class UserLogin(Resource):
 
 class TokenRefresh(Resource):
     
-        @jwt_refresh_token_required
-        def post(self):
-            current_user = get_jwt_identity()
-            new_token = create_access_token(identity=current_user, fresh=False)
-            return {'access_token': new_token}, 200
+    @jwt_refresh_token_required
+    def post(self):
+        current_user = get_jwt_identity()
+        new_token = create_access_token(identity=current_user, fresh=False)
+        return {'access_token': new_token}, 200
 
+
+class UserLogout(Resource):
+
+    @jwt_required
+    def post(self):
+        # jwt id
+        jti = get_raw_jwt()['jti']
+        BLACKLIST.add(jti)
+        print(BLACKLIST)
+        return {'message': 'Successfully logged out.'}, 200
 
 
 
