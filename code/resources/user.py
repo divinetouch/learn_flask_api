@@ -1,27 +1,35 @@
 from flask_restful import Resource, reqparse
 from models.user import UserModel
 from flask_jwt_extended import (
-        create_access_token, 
-        create_refresh_token, 
-        jwt_refresh_token_required, 
-        get_jwt_identity,
-        get_raw_jwt,
-        jwt_required
-        )
+    create_access_token,
+    create_refresh_token,
+    jwt_refresh_token_required,
+    get_jwt_identity,
+    get_raw_jwt,
+    jwt_required
+)
 from werkzeug.security import safe_str_cmp
 from resources.blacklist import BLACKLIST
 
+BLANK_ERROR = "'{}' cannot be blank."
+USER_ALREADY_EXISTS = "A user with that username already exists."
+CREATED_SUCCESSFULLY = "User created successfully."
+USER_NOT_FOUND = "User not found."
+USER_DELETED = "User deleted."
+INVALID_CREDENTIALS = "Invalid credentials!"
+USER_LOGGED_OUT = "User <id={}> successfully logged out."
+
 _user_parser = reqparse.RequestParser()
 _user_parser.add_argument('username',
-                    type=str,
-                    required=True,
-                    help='This field cannot be blank.'
-                    )
+                          type=str,
+                          required=True,
+                          help=BLANK_ERROR.format('username')
+                          )
 _user_parser.add_argument('password',
-                    type=str,
-                    required=True,
-                    help='This field cannot be blank.'
-                    )
+                          type=str,
+                          required=True,
+                          help=BLANK_ERROR.format('password')
+                          )
 
 
 class UserRegister(Resource):
@@ -29,19 +37,20 @@ class UserRegister(Resource):
         data = _user_parser.parse_args()
 
         if UserModel.find_by_username(data['username']):
-            return {'message': 'A user with that username already exist'}, 400
+            return {'message': USER_ALREADY_EXISTS}, 400
 
         user = UserModel(**data)
         user.save_to_db()
 
-        return {'message': 'User created successfully'}, 201
+        return {'message': CREATED_SUCCESSFULLY}, 201
+
 
 class User(Resource):
     @classmethod
     def get(cls, user_id):
         user = UserModel.find_by_id(user_id)
         if not user:
-            return {'message': 'User not found'}, 404
+            return {'message': USER_NOT_FOUND}, 404
 
         return user.json()
 
@@ -49,10 +58,11 @@ class User(Resource):
     def delete(cls, user_id):
         user = UserModel.find_by_id(user_id)
         if not user:
-            return {'message': 'User not found'}, 404
+            return {'message': USER_NOT_FOUND}, 404
 
         user.delete_from_db()
-        return {'message': 'User deleted.'}, 200
+        return {'message': USER_DELETED}, 200
+
 
 class UserLogin(Resource):
 
@@ -67,22 +77,22 @@ class UserLogin(Resource):
         # check password
         if user and safe_str_cmp(user.password, data['password']):
             # create access token
-            access_token = create_access_token(identity=user.id, fresh=True) 
+            access_token = create_access_token(identity=user.id, fresh=True)
 
             # create refresh token
             refresh_token = create_refresh_token(user.id)
 
             return {
-                    'access_token': access_token,
-                    'refresh_token': refresh_token
+                'access_token': access_token,
+                'refresh_token': refresh_token
             }, 200
 
-        # return them 
-        return {'message': 'Invalid credentials'}, 401
+        # return them
+        return {'message': INVALID_CREDENTIALS}, 401
 
 
 class TokenRefresh(Resource):
-    
+
     @jwt_refresh_token_required
     def post(self):
         current_user = get_jwt_identity()
@@ -96,12 +106,7 @@ class UserLogout(Resource):
     def post(self):
         # jwt id
         jti = get_raw_jwt()['jti']
+        user_id = get_jwt_identity()
         BLACKLIST.add(jti)
         print(BLACKLIST)
-        return {'message': 'Successfully logged out.'}, 200
-
-
-
-
-
-
+        return {'message': USER_LOGGED_OUT.format(user_id)}, 200

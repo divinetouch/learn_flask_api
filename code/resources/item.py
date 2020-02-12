@@ -2,35 +2,43 @@ from flask_jwt_extended import jwt_required, jwt_optional, get_jwt_identity, fre
 from flask_restful import Resource, reqparse
 from models.item import ItemModel
 
+BLANK_ERROR = "'{}' cannot be left blank!"
+NAME_ALREADY_EXISTS = "An item with '{}' already exists."
+ITEM_NOT_FOUND = "Item not found."
+ERROR_INSERTING = "An error occurred inserting the item."
+ITEM_DELETED = 'Item deleted.'
+
 
 class Item(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('price',
                         type=float,
                         required=True,
-                        help="This field cannot be left blank!"
+                        help=BLANK_ERROR.format('price')
                         )
 
     parser.add_argument('store_id',
                         type=int,
                         required=True,
-                        help="Every item needs a store id."
+                        help=BLANK_ERROR.format('store_id')
                         )
 
+    @classmethod
     @jwt_required
-    def get(self, name):
+    def get(cls, name):
         item = ItemModel.find_by_name(name)
         if item:
             return item.json()
 
-        return {'message': 'Item not found'}, 404
+        return {'message': ITEM_NOT_FOUND}, 404
 
+    @classmethod
     @jwt_required
-    def post(self, name):
+    def post(cls, name):
 
         if ItemModel.find_by_name(name):
             # not found
-            return {'message': "An item with name '{}' already exists".format(name)}, 400
+            return {'message': NAME_ALREADY_EXISTS.format(name)}, 400
 
         data = Item.parser.parse_args()
 
@@ -43,12 +51,13 @@ class Item(Resource):
             item.save_to_db()
         except:
             # Internal server error
-            return {'message': 'An error occurred inserting the item.'}, 500
+            return {'message': ERROR_INSERTING}, 500
 
         return item.json(), 201
 
+    @classmethod
     @jwt_required
-    def delete(self, name):
+    def delete(cls, name):
         # claims = get_jwt_claims()
         # if not claims['is_admin']:
         #     return {'message': 'Admin privilege required.'}, 401
@@ -56,10 +65,11 @@ class Item(Resource):
         if item:
             item.delete_from_db()
 
-        return {'message': 'Item deleted'}
+        return {'message': ITEM_DELETED}
 
+    @classmethod
     @jwt_required
-    def put(self, name):
+    def put(cls, name):
         data = Item.parser.parse_args()
 
         item = ItemModel.find_by_name(name)
