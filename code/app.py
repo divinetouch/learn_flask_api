@@ -15,7 +15,8 @@ from db import db
 load_dotenv()
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'sqlite:///data.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+    'DATABASE_URI', 'sqlite:///data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PROPAGATE_EXCEPTIONS'] = True
 app.config['JWT_BLACKLIST_ENABLED'] = True
@@ -31,7 +32,8 @@ def create_tables():
     db.create_all()
 
 
-jwt = JWTManager(app) # not creating the auth end point
+jwt = JWTManager(app)  # not creating the auth end point
+
 
 @jwt.user_claims_loader
 def add_claims_to_jwt(identity):
@@ -49,12 +51,14 @@ def expired_token_callback():
         'error': 'token_expired'
     }, 401
 
+
 @jwt.invalid_token_loader
 def invalid_token_callback(error):
     return jsonify({
         'description': 'Signature verification failed',
         'error': 'invalid_token'
     }), 401
+
 
 @jwt.revoked_token_loader
 def reovked_token_callback():
@@ -63,10 +67,12 @@ def reovked_token_callback():
         'error': 'token_revoked'
     }), 401
 
+
 @jwt.token_in_blacklist_loader
 def check_if_token_in_blacklist(decrypted_token):
     print(decrypted_token)
     return decrypted_token['jti'] in BLACKLIST
+
 
 api.add_resource(Item, '/item/<string:name>')
 api.add_resource(Store, '/store/<string:name>')
