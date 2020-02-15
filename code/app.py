@@ -8,7 +8,9 @@ from resources.user import UserRegister, User, UserLogin, TokenRefresh, UserLogo
 from resources.item import Item, ItemList
 from resources.store import Store, StoreList
 from resources.blacklist import BLACKLIST
+from marshmallow import ValidationError
 from db import db
+from ma import ma
 
 # pylint: disable=invalid-name
 
@@ -24,12 +26,18 @@ app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 app.config['JWT_SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.secret_key = os.getenv('SECRET_KEY')
 db.init_app(app)
+ma.init_app(app)
 api = Api(app)
 
 
 @app.before_first_request
 def create_tables():
     db.create_all()
+
+
+@app.errorhandler(ValidationError)
+def handle_marshmallow_validation(err):  # except ValidationError as err
+    return jsonify(err.messages), 400
 
 
 jwt = JWTManager(app)  # not creating the auth end point
@@ -75,10 +83,10 @@ def check_if_token_in_blacklist(decrypted_token):
 
 
 api.add_resource(Item, '/item/<string:name>')
-api.add_resource(Store, '/store/<string:name>')
 api.add_resource(ItemList, '/items')
-api.add_resource(UserRegister, '/register')
+api.add_resource(Store, '/store/<string:name>')
 api.add_resource(StoreList, '/stores')
+api.add_resource(UserRegister, '/register')
 api.add_resource(User, '/user/<int:user_id>')
 api.add_resource(UserLogin, '/login')
 api.add_resource(UserLogout, '/logout')

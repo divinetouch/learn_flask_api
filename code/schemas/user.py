@@ -1,10 +1,11 @@
-from marshmallow import Schema, fields
+from ma import ma
+from models.user import UserModel
 
 
-class UserSchema(Schema):
+class UserSchema(ma.ModelSchema):
     class Meta:
+        model = UserModel
+
         # password field is only for loading data, not for dumping data
         load_only = ("password", )
-    id = fields.Int()
-    username = fields.Str(required=True)
-    password = fields.Str(required=True)
+        dump_only = ("id", )
